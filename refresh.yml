@@ -1,0 +1,50 @@
+name: Refresh Dashboard Data
+
+# 方案2：手动触发 —— 把 Excel 数据源重新转成 dashboard.json 并提交
+on:
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      # 看板文件所在的子目录（相对仓库根）。若放在仓库根，改为 "."。
+      DASH_DIR: "humanoid-dashboard"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install openpyxl
+
+      - name: Run convert script
+        working-directory: ${{ env.DASH_DIR }}
+        run: |
+          python convert_excel.py
+          echo "=== dashboard.json regenerated ==="
+
+      - name: Verify output
+        working-directory: ${{ env.DASH_DIR }}
+        run: |
+          test -f dashboard.json && echo "dashboard.json OK"
+          python -c "import json; d=json.load(open('dashboard.json',encoding='utf-8')); print('meta', d['meta']); print('companies', len(d['companies']), 'products', len(d['products']), 'financing', len(d['financing']), 'market', len(d['market']))"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "${{ env.DASH_DIR }}/dashboard.json"
+          if git diff --cached --quiet; then
+            echo "No changes to dashboard.json"
+          else
+            git commit -m "chore(dashboard): refresh data from Excel source [skip ci]"
+            git push
+          fi

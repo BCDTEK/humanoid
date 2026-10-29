@@ -25,12 +25,12 @@
   --topbar-bg:#10151c;
 }
 /* ===== 多色系（强调色）=====
-   通过 data-theme 切换 --acc / --acc-soft / --acc-bg */
-[data-theme="teal"]{--acc:#2563eb;--acc-soft:#93b4f0;--acc-bg:rgba(37,99,235,.12)}
-[data-theme="blue"]{--acc:#3a7ca5;--acc-soft:#9fc7e0;--acc-bg:rgba(58,124,165,.12)}
-[data-theme="amber"]{--acc:#b07b2e;--acc-soft:#e0bd8f;--acc-bg:rgba(176,123,46,.12)}
-[data-theme="purple"]{--acc:#7a5fbf;--acc-soft:#c2b0e6;--acc-bg:rgba(122,95,191,.12)}
-[data-theme="slate"]{--acc:#5b6b7a;--acc-soft:#b0bfcc;--acc-bg:rgba(91,107,122,.12)}
+   通过 data-theme 切换 --acc / --acc-soft / --acc-bg；--kpi-a/--kpi-b 为 KPI 卡片渐变背景 */
+[data-theme="teal"]{--acc:#0050d8;--acc-soft:#8fb0ee;--acc-bg:rgba(0,80,216,.12);--kpi-a:#102a63;--kpi-b:#1a3a8f}
+[data-theme="blue"]{--acc:#3a7ca5;--acc-soft:#9fc7e0;--acc-bg:rgba(58,124,165,.12);--kpi-a:#163a4e;--kpi-b:#1f556f}
+[data-theme="amber"]{--acc:#b07b2e;--acc-soft:#e0bd8f;--acc-bg:rgba(176,123,46,.12);--kpi-a:#54401f;--kpi-b:#7a5c2c}
+[data-theme="purple"]{--acc:#7a5fbf;--acc-soft:#c2b0e6;--acc-bg:rgba(122,95,191,.12);--kpi-a:#332a5e;--kpi-b:#4a3d85}
+[data-theme="slate"]{--acc:#5b6b7a;--acc-soft:#b0bfcc;--acc-bg:rgba(91,107,122,.12);--kpi-a:#28323d;--kpi-b:#3b4856}
 
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;font-size:13px;line-height:1.55;transition:background .25s,color .25s}
@@ -80,15 +80,15 @@ main{max-width:1400px;width:100%;margin:0 auto;padding:14px 22px 34px}
 .c2{grid-template-columns:1fr 1fr}
 @media(max-width:1100px){.kpi-grid,.c2{grid-template-columns:1fr 1fr}}
 @media(max-width:700px){.kpi-grid,.c2{grid-template-columns:1fr}}
-/* ===== 指标卡 ===== */
-.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;transition:background .25s,border-color .25s}
-.kpi .k{font-size:10px;color:var(--acc);margin-bottom:4px}
-.kpi .t{font-size:11px;color:var(--sub)}
-.kpi .v{font-size:22px;font-weight:700;margin:3px 0;color:var(--text)}
-.kpi .v b{color:var(--acc)}
-.kpi .s{font-size:10px;color:var(--sub);line-height:1.4}
-.kpi .predtag{display:inline-block;font-size:9px;color:var(--acc);background:var(--acc-bg);border:1px solid var(--acc-soft);border-radius:9px;padding:0 5px;margin-right:4px}
-.kpi .knote{color:var(--foot)}
+/* ===== 指标卡（深色渐变，随配色切换） ===== */
+.kpi{background:linear-gradient(135deg,var(--kpi-a),var(--kpi-b));border:none;border-radius:10px;padding:12px 14px;transition:background .25s,border-color .25s;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.kpi .k{font-size:10px;color:#a8c6ff;margin-bottom:4px}
+.kpi .t{font-size:11px;color:#cdd9f5}
+.kpi .v{font-size:22px;font-weight:700;margin:3px 0;color:#fff}
+.kpi .v b{color:#a8c6ff}
+.kpi .s{font-size:10px;color:#cdd9f5;line-height:1.4}
+.kpi .predtag{display:inline-block;font-size:9px;color:#fff;background:rgba(168,198,255,.18);border:1px solid rgba(168,198,255,.4);border-radius:9px;padding:0 5px;margin-right:4px}
+.kpi .knote{color:#cdd9f5}
 .chart{width:100%;height:300px}
 /* ===== 机构切换按钮 ===== */
 .seg{display:flex;gap:5px;flex-wrap:wrap}
@@ -198,6 +198,17 @@ function axisColor(){ return document.body.dataset.mode==='dark' ? '#7c8a9e' : '
 function gridColor(){ return document.body.dataset.mode==='dark' ? '#262f3c' : '#e6e9ef'; }
 // 格式化数值：去掉多余小数
 function fmtNum(n){ if(n==null||isNaN(n)) return 'NA'; return String(Math.round(n*100)/100); }
+// IDC 风格彩色板 —— 按主题（data-theme）切换的图表色板，主色随配色变化
+const THEME_PALETTES={
+  teal:  ['#0050d8','#f5a623','#ffc933','#3a9bd8','#7a5fbf','#0aa2a0','#8a97ab','#e8483c'],
+  blue:  ['#3a7ca5','#f0a23c','#e8c96f','#7fb3d9','#9a7fc9','#2a9d8f','#9aa6b5','#c97b6b'],
+  amber: ['#b07b2e','#3a7ca5','#7a5fbf','#d9a84f','#9a6b3f','#0aa2a0','#8a97ab','#c9603c'],
+  purple:['#7a5fbf','#f0a23c','#0aa2a0','#9a7fc9','#3a7ca5','#e8c96f','#8a97ab','#c97b6b'],
+  slate: ['#5b6b7a','#f0a23c','#3a7ca5','#0aa2a0','#9a7fc9','#d9a84f','#8a97ab','#c97b6b']
+};
+function currentTheme(){ return document.body.dataset.theme||'teal'; }
+function chartColors(){ return THEME_PALETTES[currentTheme()]||THEME_PALETTES.teal; }
+function idcPalette(n){ const c=chartColors(); return Array.from({length:n},(_,i)=>c[i%c.length]); }
 // 生成实际色的"浅一色号"（同色系变浅）：mix 当前色与白/背景
 function lightenColor(hex, amt){
   let h = String(hex||'').replace('#','');
@@ -280,7 +291,7 @@ function renderMarket(){
   const units={'全球/出货量':'万台','中国/出货量':'万台','全球/市场规模':'亿美元','中国/市场规模':'亿元'};
   const colors={'全球/出货量':'var(--acc)','全球/市场规模':'var(--acc)','中国/出货量':'var(--acc)','中国/市场规模':'var(--acc)'};
   const acc=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim();
-  const colorMap={'全球/出货量':acc,'全球/市场规模':acc,'中国/出货量':acc,'中国/市场规模':acc};
+  const colorMap={'全球/出货量':chartColors()[0],'全球/市场规模':chartColors()[0],'中国/出货量':chartColors()[0],'中国/市场规模':chartColors()[0]};
   v.innerHTML=`
   <div class="grid kpi-grid" style="margin-bottom:12px">
     ${D.kpis.map(k=>{
@@ -331,12 +342,15 @@ function pieOption(data, colors){
 }
 function barHAxis(keys, vals, color){
   const axc=axisColor(), gc=gridColor();
+  const multicolor = Array.isArray(color);
   return {
     grid:{left:8, right:30, top:10, bottom:4, containLabel:true},
     tooltip:{trigger:'axis', axisPointer:{type:'shadow'}},
     xAxis:{type:'value', axisLabel:{color:axc,fontSize:10}, splitLine:{lineStyle:{color:gc}}},
     yAxis:{type:'category', data:keys, axisLabel:{color:axc,fontSize:10}, axisLine:{lineStyle:{color:gc}}},
-    series:[{type:'bar', data:vals, barMaxWidth:14, itemStyle:{color, borderRadius:[0,3,3,0]}, label:{show:true,position:'right',color:axc,fontSize:10}}]
+    series:[{type:'bar', data:vals, barMaxWidth:14,
+      itemStyle:{color:multicolor?(p)=>color[p.dataIndex%color.length]:color, borderRadius:[0,3,3,0]},
+      label:{show:true,position:'right',color:axc,fontSize:10}}]
   };
 }
 function renderCompete(){
@@ -366,8 +380,13 @@ function renderCompete(){
   <div class="grid c2">
     <div class="card"><h3>发展阶段分布</h3><div class="chart" id="ch-cstage"></div></div>
     <div class="card"><h3>是否带交互屏</h3><div class="chart" id="ch-cscreen"></div></div>
-    <div class="card"><h3>企业国别分布</h3><div class="chart" id="ch-ccountry"></div></div>
-    <div class="card"><h3>各企业产品数量 Top 12</h3><div class="chart" id="ch-ccompany"></div></div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h3>企业国别分布（按企业数量热力填充）</h3>
+    <div class="chart" id="ch-ccountry" style="height:400px"></div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h3>各企业产品数量 Top 12</h3><div class="chart" id="ch-ccompany"></div>
   </div>
   <div class="card" style="margin-top:12px">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
@@ -404,9 +423,9 @@ function renderCompete(){
     <b>数据来源</b>：各企业官网/官方发布会，详见《人形机器人看板数据源.xlsx》②产品名单。
   </div>`;
   // 图表
-  mkChart('ch-cstage', pieOption(Object.entries(stage), palette));
-  mkChart('ch-cscreen', pieOption(Object.entries(screen), [acc, lightenColor(acc,0.6), lightenColor(acc,0.85)]));
-  mkChart('ch-ccompany', barHAxis(coArr.map(x=>x[0]).reverse(), coArr.map(x=>x[1]).reverse(), lightenColor(acc,0.35)));
+  mkChart('ch-cstage', pieOption(Object.entries(stage), idcPalette(Object.keys(stage).length)));
+  mkChart('ch-cscreen', pieOption(Object.entries(screen), [chartColors()[0], chartColors()[2], '#c5d0dd']));
+  mkChart('ch-ccompany', barHAxis(coArr.map(x=>x[0]).reverse(), coArr.map(x=>x[1]).reverse(), idcPalette(coArr.length)));
   // 世界地图（异步加载 GeoJSON）
   renderWorldMap(country, acc);
   // 表格搜索
@@ -442,46 +461,83 @@ function renderWorldMap(countryDist, acc){
   const axc=axisColor();
   const el=document.getElementById('ch-ccountry');
   if(!el) return;
-  // 数据点
-  const pts=Object.entries(countryDist)
-    .filter(([name])=>COORD[name])
-    .map(([name,val])=>({name, value:[...COORD[name], val]}));
-  const maxV=Math.max(...pts.map(p=>p.value[2]),1);
+  const dark=document.body.dataset.mode==='dark';
+  // 国家名称映射（中文→GeoJSON英文）
+  const NAME_MAP={
+    '中国':'China','美国':'United States','日本':'Japan','韩国':'South Korea',
+    '英国':'United Kingdom','德国':'Germany','法国':'France','西班牙':'Spain',
+    '意大利':'Italy','奥地利':'Austria','瑞士':'Switzerland','荷兰':'Netherlands',
+    '挪威':'Norway','加拿大':'Canada','以色列':'Israel','波兰':'Poland',
+    '澳大利亚':'Australia','俄罗斯':'Russia'
+  };
+  const data=Object.entries(countryDist).map(([cn,val])=>({
+    name: NAME_MAP[cn]||cn,
+    value: val,
+    cn: cn
+  }));
+  const maxV=Math.max(...data.map(d=>d.value),1);
   const draw=()=>{
     const old=echarts.getInstanceByDom(el); if(old) old.dispose();
     const c=echarts.init(el);
     c.setOption({
-      geo:{
-        map:'world', roam:true,
-        itemStyle:{areaColor: document.body.dataset.mode==='dark'?'#1a2230':'#e8edf2', borderColor: document.body.dataset.mode==='dark'?'#3a4556':'#c8d0da', borderWidth:0.5},
-        emphasis:{itemStyle:{areaColor: document.body.dataset.mode==='dark'?'#243044':'#d4dce6'}, label:{show:false}},
-        zoom:1.05, center:[30,20]
+      tooltip:{
+        trigger:'item',
+        formatter:p=>{
+          if(p.seriesType==='map'){
+            const d=data.find(x=>x.name===p.name);
+            return d?`${d.cn}：${d.value} 家企业`:`${p.name}：无数据`;
+          }
+          return p.name;
+        }
       },
-      tooltip:{trigger:'item', formatter:p=>p.seriesType==='scatter'?`${p.name}: ${p.value[2]}款`:p.name},
+      visualMap:{
+        min:0, max:maxV,
+        left:20, bottom:20,
+        text:['多','少'],
+        inRange:{
+          color: dark?['#1a2230', acc] : ['#e8edf2', acc]
+        },
+        textStyle:{color: axc, fontSize:11}
+      },
       series:[{
-        type:'scatter', coordinateSystem:'geo',
-        symbolSize:val=>Math.max(6, Math.sqrt(val[2]/maxV)*28),
-        itemStyle:{color:acc, shadowBlur:8, shadowColor:acc},
+        type:'map', map:'world',
+        roam:true, zoom:1.05, center:[30,20],
         label:{show:false},
-        data:pts
+        itemStyle:{
+          areaColor: dark?'#1a2230':'#e8edf2',
+          borderColor: dark?'#3a4556':'#c8d0da',
+          borderWidth:0.5
+        },
+        emphasis:{
+          itemStyle:{areaColor: dark?'#243044':'#d4dce6'},
+          label:{show:true, color:axc, fontSize:11}
+        },
+        data: data
       },{
-        type:'effectScatter', coordinateSystem:'geo',
-        symbolSize:val=>Math.max(8, Math.sqrt(val[2]/maxV)*30),
-        rippleEffect:{brushType:'stroke', scale:2.2},
-        itemStyle:{color:acc},
-        label:{show:true, position:'right', formatter:p=>p.value[2]>=10?p.name+' '+p.value[2]:'', color:axc, fontSize:10},
-        data:pts.filter(p=>p.value[2]>=10)
+        type:'scatter', coordinateSystem:'geo',
+        symbolSize:val=>Math.max(8, Math.sqrt(val[2]||0)*12),
+        itemStyle:{color:'#fff', borderColor:acc, borderWidth:2},
+        label:{
+          show:true, position:'right',
+          formatter:p=>{
+            const d=data.find(x=>x.name===p.name);
+            return d&&d.value>=1?`${d.cn} ${d.value}`:'';
+          },
+          color:axc, fontSize:11, fontWeight:600
+        },
+        data: data.map(d=>({
+          name:d.name,
+          value:[...(COORD[d.cn]||[0,0]), d.value]
+        })).filter(d=>COORD[d.name])
       }]
     });
     charts.push(c);
   };
   if(worldMapLoaded){ draw(); return; }
-  // 加载世界地图 GeoJSON（本地同目录）
   fetch('world.json')
     .then(r=>r.json())
     .then(gj=>{ echarts.registerMap('world', gj); worldMapLoaded=true; draw(); })
     .catch(()=>{
-      // 失败时降级为横向条形图
       const ctryArr=Object.entries(countryDist).sort((a,b)=>b[1]-a[1]);
       mkChart('ch-ccountry', barHAxis(ctryArr.map(x=>x[0]).reverse(), ctryArr.map(x=>x[1]).reverse(), acc));
     });
@@ -584,10 +640,12 @@ function renderFinance(){
     tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
     xAxis:{type:'category',data:yearKeys,axisLabel:{color:axc,fontSize:10,rotate:30}},
     yAxis:{type:'value',axisLabel:{color:axc,fontSize:10},splitLine:{lineStyle:{color:gc}}},
-    series:[{type:'bar',data:yearVals,barMaxWidth:24,itemStyle:{color:acc,borderRadius:[3,3,0,0]},label:{show:true,position:'top',color:axc,fontSize:10}}]
+    series:[{type:'bar',data:yearVals,barMaxWidth:24,
+      itemStyle:{color:p=>chartColors()[p.dataIndex%chartColors().length],borderRadius:[3,3,0,0]},
+      label:{show:true,position:'top',color:axc,fontSize:10}}]
   });
-  mkChart('ch-fround', pieOption(Object.entries(roundAgg), [acc, lightenColor(acc,0.3), lightenColor(acc,0.6), lightenColor(acc,0.85)]));
-  mkChart('ch-fco', barHAxis(topCo.map(x=>x[0]).reverse(), topCo.map(x=>x[1]).reverse(), acc));
+  mkChart('ch-fround', pieOption(Object.entries(roundAgg), idcPalette(Object.keys(roundAgg).length)));
+  mkChart('ch-fco', barHAxis(topCo.map(x=>x[0]).reverse(), topCo.map(x=>x[1]).reverse(), idcPalette(topCo.length)));
   // 搜索
   const searchEl=document.getElementById('fin-search');
   const tbody=document.getElementById('fin-tbody');

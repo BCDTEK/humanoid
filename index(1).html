@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人形机器人资讯仪表盘 · 市场规模</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='4' width='18' height='16' rx='3' fill='%232f6f6a'/%3E%3Crect x='8' y='7' width='8' height='3' rx='1' fill='%23eaf5f2'/%3E%3Ccircle cx='10' cy='13' r='1.6' fill='%238fd0c8'/%3E%3Ccircle cx='14' cy='13' r='1.6' fill='%238fd0c8'/%3E%3C/svg%3E">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<style>
+/* ===== 亮暗主题变量 ===== */
+:root{
+  --bg:#f4f6f8; --card:#ffffff; --line:#e2e7ee; --text:#1c2733; --sub:#5b6675;
+  --hover:#eef3f2; --chip:#e8f2f0;
+  --hdr-bg:#eef1f5; --hdr-text:#3a4656; --foot:#8a94a6;
+  --grid:#e6e9ef; --axis:#b9c2ce; --btn-bg:#f1f4f7;
+  --sidebar-bg:#eef2f5; --sidebar-text:#5b6675; --sidebar-active:#ffffff;
+  --topbar-bg:#ffffff;
+}
+[data-mode="dark"]{
+  --bg:#10151c; --card:#161c26; --line:#2a3342; --text:#e6ebf2; --sub:#93a0b3;
+  --hover:#1e2733; --chip:#1f2c29;
+  --hdr-bg:#1c2530; --hdr-text:#c7d0dc; --foot:#6f7c8e;
+  --grid:#262f3c; --axis:#4b586b; --btn-bg:#1b2430;
+  --sidebar-bg:#0c1119; --sidebar-text:#93a0b3; --sidebar-active:#1a2330;
+  --topbar-bg:#10151c;
+}
+/* ===== 多色系（强调色）=====
+   通过 data-theme 切换 --acc / --acc-soft / --acc-bg；--kpi-a/--kpi-b 为 KPI 卡片渐变背景 */
+[data-theme="teal"]{--acc:#0050d8;--acc-soft:#8fb0ee;--acc-bg:rgba(0,80,216,.12);--kpi-a:#102a63;--kpi-b:#1a3a8f}
+[data-theme="blue"]{--acc:#3a7ca5;--acc-soft:#9fc7e0;--acc-bg:rgba(58,124,165,.12);--kpi-a:#163a4e;--kpi-b:#1f556f}
+[data-theme="amber"]{--acc:#b07b2e;--acc-soft:#e0bd8f;--acc-bg:rgba(176,123,46,.12);--kpi-a:#54401f;--kpi-b:#7a5c2c}
+[data-theme="purple"]{--acc:#7a5fbf;--acc-soft:#c2b0e6;--acc-bg:rgba(122,95,191,.12);--kpi-a:#332a5e;--kpi-b:#4a3d85}
+[data-theme="slate"]{--acc:#5b6b7a;--acc-soft:#b0bfcc;--acc-bg:rgba(91,107,122,.12);--kpi-a:#28323d;--kpi-b:#3b4856}
+
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;font-size:13px;line-height:1.55;transition:background .25s,color .25s}
+a{color:inherit}
+/* ===== 整体布局：左侧侧边栏 + 右侧主区 ===== */
+.layout{display:flex;min-height:100vh}
+/* ===== 侧边栏 ===== */
+.sidebar{width:212px;flex-shrink:0;background:var(--sidebar-bg);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;transition:background .25s}
+.side-brand{display:flex;align-items:center;gap:8px;padding:14px 14px;border-bottom:1px solid var(--line)}
+.side-brand .logo{width:28px;height:28px;border-radius:7px;background:var(--acc);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0}
+.side-brand .bt{font-size:13.5px;font-weight:700;line-height:1.3;display:flex;flex-direction:column;align-items:flex-start;white-space:nowrap;min-width:0}
+.side-brand .bt small{display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:10px;font-weight:600;color:var(--acc);background:var(--acc-bg);border:1px solid var(--acc-soft);border-radius:20px;padding:2px 10px;letter-spacing:.4px;width:max-content}
+.side-brand .bt small::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 2px var(--acc-bg)}
+.side-brand .bt small::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 2px var(--acc-bg)}
+.side-nav{flex:1;padding:10px 8px;overflow-y:auto}
+.side-nav button{display:flex;align-items:center;gap:10px;width:100%;border:none;background:transparent;color:var(--sidebar-text);padding:9px 12px;border-radius:8px;font-size:13px;cursor:pointer;text-align:left;margin-bottom:2px;transition:all .15s}
+.side-nav button .ico{width:16px;text-align:center;flex-shrink:0;font-size:14px}
+.side-nav button:hover{color:var(--text);background:var(--hover)}
+.side-nav button.on{color:var(--acc);background:var(--acc-bg);font-weight:600}
+.side-foot{padding:12px 18px;border-top:1px solid var(--line);font-size:10px;color:var(--foot)}
+/* ===== 主区 ===== */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:40;background:var(--topbar-bg);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:10px 22px;flex-wrap:wrap;transition:background .25s}
+.topbar .pagetitle{font-size:15px;font-weight:700}
+.topbar .updated{font-size:11px;color:var(--sub);margin-left:auto;white-space:nowrap}
+.tools{display:flex;align-items:center;gap:8px}
+/* 色系切换 */
+.theme-picker{display:flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:8px;padding:3px 6px}
+.theme-picker .sw{width:16px;height:16px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:all .15s}
+.theme-picker .sw.on{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc-bg)}
+/* 亮暗切换 */
+.mode-switch{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.mode-switch button{border:none;background:transparent;color:var(--sub);padding:4px 12px;font-size:11px;cursor:pointer}
+.mode-switch button.on{background:var(--acc);color:#fff}
+.icon-btn{width:30px;height:30px;border:1px solid var(--line);border-radius:8px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--sub);position:relative}
+.icon-btn:hover{color:var(--text);background:var(--hover)}
+.icon-btn .dot{position:absolute;top:5px;right:6px;width:7px;height:7px;border-radius:50%;background:#d9534f}
+main{max-width:1400px;width:100%;margin:0 auto;padding:14px 22px 34px}
+.view{display:none}
+.view.on{display:block}
+/* ===== 卡片 ===== */
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;transition:background .25s,border-color .25s}
+.card h3{font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.card h3 .tag{font-size:10px;color:var(--sub);font-weight:400;background:var(--hover);padding:1px 7px;border-radius:9px}
+.grid{display:grid;gap:12px}
+.kpi-grid{grid-template-columns:repeat(4,1fr)}
+.c2{grid-template-columns:1fr 1fr}
+@media(max-width:1100px){.kpi-grid,.c2{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.kpi-grid,.c2{grid-template-columns:1fr}}
+/* ===== 指标卡（深色渐变，随配色切换） ===== */
+.kpi{background:linear-gradient(135deg,var(--kpi-a),var(--kpi-b));border:none;border-radius:10px;padding:12px 14px;transition:background .25s,border-color .25s;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.kpi .k{font-size:10px;color:#a8c6ff;margin-bottom:4px}
+.kpi .t{font-size:11px;color:#cdd9f5}
+.kpi .v{font-size:22px;font-weight:700;margin:3px 0;color:#fff}
+.kpi .v b{color:#a8c6ff}
+.kpi .s{font-size:10px;color:#cdd9f5;line-height:1.4}
+.kpi .predtag{display:inline-block;font-size:9px;color:#fff;background:rgba(168,198,255,.18);border:1px solid rgba(168,198,255,.4);border-radius:9px;padding:0 5px;margin-right:4px}
+.kpi .knote{color:#cdd9f5}
+.chart{width:100%;height:300px}
+/* ===== 机构切换按钮 ===== */
+.seg{display:flex;gap:5px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:var(--btn-bg);color:var(--sub);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;transition:all .15s}
+.seg button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.seg button:not(.on):hover{border-color:var(--acc);color:var(--acc)}
+.note{font-size:10px;color:var(--sub);margin-top:10px;line-height:1.6}
+.note a{color:var(--acc);text-decoration:none}
+.note a:hover{text-decoration:underline}
+.foot{text-align:center;color:var(--foot);font-size:11px;padding:16px 0 6px}
+/* 侧边栏窄屏折叠 */
+@media(max-width:720px){
+  .sidebar{width:56px}
+  .side-brand .bt,.side-nav button span.txt,.side-foot{display:none}
+  .side-brand{justify-content:center;padding:14px 0}
+  .side-nav button{justify-content:center;padding:10px 0}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- 左侧侧边栏 -->
+  <aside class="sidebar">
+    <div class="side-brand">
+      <div class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="11" rx="2"/><path d="M12 8V5"/><circle cx="12" cy="3" r="1.4"/><path d="M9 13h.01M15 13h.01"/><path d="M9 16.5h6"/><path d="M4 10H2M22 10h-2"/></svg></div>
+      <div class="bt">人形机器人资讯仪表盘<small>芯视佳专用</small></div>
+    </div>
+    <nav class="side-nav" id="nav">
+      <button data-v="market" class="on"><span class="ico">▦</span><span class="txt">市场规模</span></button>
+      <button data-v="compete"><span class="ico">◧</span><span class="txt">竞争格局</span></button>
+      <button data-v="scene"><span class="ico">◎</span><span class="txt">应用场景</span></button>
+      <button data-v="finance"><span class="ico">¥</span><span class="txt">融资情况</span></button>
+      <button data-v="policy"><span class="ico">§</span><span class="txt">技术政策</span></button>
+      <button data-v="news"><span class="ico">≡</span><span class="txt">资讯中心</span></button>
+    </nav>
+    <div class="side-foot">数据源：人形机器人看板数据源.xlsx<br>刷新：GitHub Actions 手动触发</div>
+  </aside>
+  <!-- 右侧主区 -->
+  <div class="main">
+    <div class="topbar">
+      <div class="pagetitle">市场规模</div>
+      <div class="updated">数据更新：2026-10-21</div>
+      <div class="tools">
+        <div class="theme-picker" id="theme-picker" title="选择色系">
+          <span class="sw" data-theme="teal" style="background:#2563eb" title="科技蓝"></span>
+          <span class="sw" data-theme="blue" style="background:#3a7ca5" title="雾蓝"></span>
+          <span class="sw" data-theme="amber" style="background:#b07b2e" title="暖棕"></span>
+          <span class="sw" data-theme="purple" style="background:#7a5fbf" title="紫灰"></span>
+          <span class="sw" data-theme="slate" style="background:#5b6b7a" title="石板"></span>
+        </div>
+        <div class="mode-switch"><button id="m-light" class="on" data-m="light"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg> 浅色</button><button id="m-dark" data-m="dark"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg> 深色</button></div>
+        <button class="icon-btn" id="bell" title="通知"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="dot"></span></button>
+      </div>
+    </div>
+    <main>
+      <section class="view on" id="v-market"></section>
+      <section class="view" id="v-compete"><div class="card"><h3>竞争格局</h3><p style="color:var(--sub);padding:20px 4px">该板块代码后续补充。</p></div></section>
+      <section class="view" id="v-scene"><div class="card"><h3>应用场景</h3><p style="color:var(--sub);padding:20px 4px">该板块代码后续补充。</p></div></section>
+      <section class="view" id="v-finance"><div class="card"><h3>融资情况</h3><p style="color:var(--sub);padding:20px 4px">该板块代码后续补充。</p></div></section>
+      <section class="view" id="v-policy"><div class="card"><h3>技术政策</h3><p style="color:var(--sub);padding:20px 4px">该板块代码后续补充。</p></div></section>
+      <section class="view" id="v-news">
+        <div style="margin-bottom:16px">
+          <input id="news-search" type="text" placeholder="搜索企业名称 / 关键词 / 来源链接…" style="width:100%;max-width:500px;padding:10px 16px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--card);color:var(--text);outline:none">
+        </div>
+        <div class="tabs" id="news-tabs" style="display:flex;gap:8px;margin-bottom:16px">
+          <div class="tab on" data-filter="all" style="padding:6px 16px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--sub)">全部</div>
+          <div class="tab" data-filter="market" style="padding:6px 16px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--sub)">市场规模</div>
+          <div class="tab" data-filter="compete" style="padding:6px 16px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--sub)">竞争格局</div>
+          <div class="tab" data-filter="finance" style="padding:6px 16px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--sub)">融资情况</div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="overflow:auto;max-height:600px">
+            <table style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead><tr style="position:sticky;top:0;background:var(--card)">
+                <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);color:var(--sub);font-weight:600;font-size:12px">企业/机构</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);color:var(--sub);font-weight:600;font-size:12px;width:100px">所属板块</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);color:var(--sub);font-weight:600;font-size:12px;width:100px">数据日期</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);color:var(--sub);font-weight:600;font-size:12px">数据内容</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);color:var(--sub);font-weight:600;font-size:12px;width:60px">来源</th>
+              </tr></thead>
+              <tbody id="news-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <div class="foot">人形机器人资讯仪表盘 · 芯视佳专用</div>
+    </main>
+  </div>
+</div>
+<script>
+let D = null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let charts = [];
+function mkChart(cid, opt){
+  const el = document.getElementById(cid); const old = echarts.getInstanceByDom(el); if(old) old.dispose();
+  const c = echarts.init(el); c.setOption(opt); charts.push(c); return c;
+}
+window.addEventListener('resize', ()=>charts.forEach(c=>c.resize()));
+function seg(id, keys, fn){
+  const el = document.getElementById(id); el.innerHTML='';
+  keys.forEach((k,i)=>{ const b=document.createElement('button'); b.textContent=k; if(i===0)b.classList.add('on');
+    b.onclick=()=>{ el.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); fn(k); }; el.appendChild(b); });
+  if(keys.length) fn(keys[0]);
+}
+function axisColor(){ return document.body.dataset.mode==='dark' ? '#7c8a9e' : '#93a0b3'; }
+function gridColor(){ return document.body.dataset.mode==='dark' ? '#262f3c' : '#e6e9ef'; }
+// 格式化数值：去掉多余小数
+function fmtNum(n){ if(n==null||isNaN(n)) return 'NA'; return String(Math.round(n*100)/100); }
+// IDC 风格彩色板 —— 按主题（data-theme）切换的图表色板，主色随配色变化
+const THEME_PALETTES={
+  teal:  ['#0050d8','#f5a623','#ffc933','#3a9bd8','#7a5fbf','#0aa2a0','#8a97ab','#e8483c'],
+  blue:  ['#3a7ca5','#f0a23c','#e8c96f','#7fb3d9','#9a7fc9','#2a9d8f','#9aa6b5','#c97b6b'],
+  amber: ['#b07b2e','#3a7ca5','#7a5fbf','#d9a84f','#9a6b3f','#0aa2a0','#8a97ab','#c9603c'],
+  purple:['#7a5fbf','#f0a23c','#0aa2a0','#9a7fc9','#3a7ca5','#e8c96f','#8a97ab','#c97b6b'],
+  slate: ['#5b6b7a','#f0a23c','#3a7ca5','#0aa2a0','#9a7fc9','#d9a84f','#8a97ab','#c97b6b']
+};
+function currentTheme(){ return document.body.dataset.theme||'teal'; }
+function chartColors(){ return THEME_PALETTES[currentTheme()]||THEME_PALETTES.teal; }
+function idcPalette(n){ const c=chartColors(); return Array.from({length:n},(_,i)=>c[i%c.length]); }
+// 生成实际色的"浅一色号"（同色系变浅）：mix 当前色与白/背景
+function lightenColor(hex, amt){
+  let h = String(hex||'').replace('#','');
+  if(h.length===3) h = h.split('').map(c=>c+c).join('');
+  if(h.length!==6) return hex;
+  const n = parseInt(h,16), r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+  const bg = document.body.dataset.mode==='dark' ? [22,28,38] : [255,255,255];
+  const nr = Math.round(r+(bg[0]-r)*amt), ng = Math.round(g+(bg[1]-g)*amt), nb = Math.round(b+(bg[2]-b)*amt);
+  return '#'+((1<<24)+(nr<<16)+(ng<<8)+nb).toString(16).slice(1);
+}
+// 亮暗切换
+function setMode(m){ document.body.dataset.mode=m;
+  document.getElementById('m-light').classList.toggle('on',m==='light');
+  document.getElementById('m-dark').classList.toggle('on',m==='dark');
+  setTimeout(()=>{ renderAllCharts(); charts.forEach(c=>c.resize()); },60);
+}
+// 色系切换
+function setTheme(t){ document.body.dataset.theme=t;
+  document.querySelectorAll('#theme-picker .sw').forEach(x=>x.classList.toggle('on',x.dataset.theme===t));
+  setTimeout(()=>{ renderAllCharts(); charts.forEach(c=>c.resize()); },60);
+}
+function renderAllCharts(){
+  if($('#v-market').classList.contains('on') && D) renderMarket();
+  if($('#v-compete').classList.contains('on') && D) renderCompete();
+  if($('#v-finance').classList.contains('on') && D) renderFinance();
+  if($('#v-news').classList.contains('on') && D) renderNews();
+}
+document.getElementById('m-light').onclick=()=>setMode('light');
+document.getElementById('m-dark').onclick=()=>setMode('dark');
+document.getElementById('theme-picker').addEventListener('click', e=>{
+  const sw=e.target.closest('.sw'); if(sw) setTheme(sw.dataset.theme);
+});
+document.getElementById('bell').onclick=()=>{ alert('暂无新通知'); };
+// 导航
+const viewTitles={market:'市场规模',compete:'竞争格局',scene:'应用场景',finance:'融资情况',policy:'技术政策',news:'资讯中心'};
+function switchView(v){
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('on',x.dataset.v===v));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  const el=document.getElementById('v-'+v); if(el) el.classList.add('on');
+  document.querySelector('.pagetitle').textContent=viewTitles[v]||'';
+  setTimeout(()=>charts.forEach(c=>c.resize()),60);
+}
+document.getElementById('nav').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  switchView(b.dataset.v);
+});
+// 初始化
+(function(){ const p=location.search.match(/[?&]mode=(light|dark)/); const m=p?p[1]:'light'; setMode(m);
+  const t=location.search.match(/[?&]theme=(teal|blue|amber|purple|slate)/); setTheme(t?t[1]:'teal');
+  const v=location.search.match(/[?&]view=([a-z]+)/); if(v) switchView(v[1]); })();
+function lineOption(series, unit, color){
+  const acts=[], preds=[];
+  const order=[];
+  series.forEach(pt=>{ order.push(pt.name); (pt.f==='F'?preds:acts).push(pt); });
+  order.sort();
+  const map={}; acts.forEach(p=>map[p.name]=p); preds.forEach(p=>map[p.name]=p);
+  const axc=axisColor(), gc=gridColor();
+  const predColor = lightenColor(color, 0.55);
+  return {
+    grid:{left:54,right:18,top:34,bottom:30},
+    tooltip:{trigger:'axis', confine:true, formatter:ps=>{
+      let h=ps[0].axisValueLabel+'<br>';
+      ps.forEach(p=>{ h+=p.seriesName+'：'+p.value[1]+' '+unit+(p.value[2]?' · 预测(F)':'')+'<br>'; }); return h;
+    }},
+    legend:{data:['实际/统计','预测(F)'], textStyle:{color:axc,fontSize:10}, top:0, itemWidth:13, itemHeight:8},
+    xAxis:{type:'category', data:order.map(String), axisLabel:{color:axc,fontSize:10}, axisLine:{lineStyle:{color:'#b9c2ce'}}, axisTick:{show:false}},
+    yAxis:{type:'value', name:unit, nameTextStyle:{color:axc,fontSize:10}, axisLabel:{color:axc,fontSize:10}, splitLine:{lineStyle:{color:gc}}},
+    series:[
+      {name:'实际/统计', type:'bar', data:acts.map(p=>[p.name,p.value,p.f]), barMaxWidth:26,
+        itemStyle:{color, borderRadius:[3,3,0,0]},
+        label:{show:acts.length<=6, position:'top', fontSize:10, color:axc}},
+      {name:'预测(F)', type:'bar', data:preds.map(p=>[p.name,p.value,p.f]), barMaxWidth:26,
+        itemStyle:{color:predColor, borderRadius:[3,3,0,0]},
+        label:{show:preds.length<=6, position:'top', fontSize:10, color:axc}}
+    ]
+  };
+}
+function renderMarket(){
+  const v=document.getElementById('v-market'), S=D.market_series;
+  const units={'全球/出货量':'万台','中国/出货量':'万台','全球/市场规模':'亿美元','中国/市场规模':'亿元'};
+  const colors={'全球/出货量':'var(--acc)','全球/市场规模':'var(--acc)','中国/出货量':'var(--acc)','中国/市场规模':'var(--acc)'};
+  const acc=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim();
+  const colorMap={'全球/出货量':chartColors()[0],'全球/市场规模':chartColors()[0],'中国/出货量':chartColors()[0],'中国/市场规模':chartColors()[0]};
+  v.innerHTML=`
+  <div class="grid kpi-grid" style="margin-bottom:12px">
+    ${D.kpis.map(k=>{
+      const rangeText = (k.min!=null && k.max!=null)
+        ? (k.min===k.max ? fmtNum(k.min)+k.unit : fmtNum(k.min)+' ~ '+fmtNum(k.max)+k.unit)
+        : 'NA';
+      const orgsText = (k.orgs&&k.orgs.length)
+        ? '<span class="predtag">预测(F)</span> '+k.orgs.join('、') + (k.note&&k.note.indexOf('另见')>=0 ? '<span class="knote">；'+k.note.split('；另见')[1]+'</span>' : '')
+        : '';
+      return `<div class="kpi"><div class="k">规模</div><div class="t">${esc(k.t)}</div><div class="v">${esc(rangeText)}</div><div class="s">${orgsText}</div></div>`;
+    }).join('')}
+  </div>
+  <div class="grid c2">
+    <div class="card"><h3>全球人形机器人出货量(万台) <span class="tag">按机构口径切换</span></h3><div class="seg" id="seg-gship"></div><div class="chart" id="ch-gship"></div></div>
+    <div class="card"><h3>全球人形机器人市场规模(亿美元) <span class="tag">按机构口径切换</span></h3><div class="seg" id="seg-gsize"></div><div class="chart" id="ch-gsize"></div></div>
+    <div class="card"><h3>中国人形机器人出货量(万台) <span class="tag">按机构口径切换</span></h3><div class="seg" id="seg-cship"></div><div class="chart" id="ch-cship"></div></div>
+    <div class="card"><h3>中国人形机器人市场规模(亿元) <span class="tag">按机构口径切换</span></h3><div class="seg" id="seg-csize"></div><div class="chart" id="ch-csize"></div></div>
+  </div>
+  <div class="note">
+    <b>口径说明</b>：本板块仅采用「全体市场」口径，已剔除单企业/细分场景数据；出货量统一换算为万台（源表台/万台混合）。实线=实际/统计，虚线=预测(F)。预测数据已标注F；缺数源表即NA，未补0。多币种市场规模保留原币种（全球美元、中国人民币），未做汇率换算。<br>
+    <b>数据来源</b>：<a href="https://www.techrepublic.com/article/news-humanoid-robot-shipments-chinese-vendors/" target="_blank">SAG 出货报告 2026-08</a> · <a href="https://www.idc.com/" target="_blank">IDC</a> · <a href="https://www.gartner.com/" target="_blank">高盛</a> · <a href="http://www.gg-ii.com/" target="_blank">GGII</a> 等，详见《人形机器人看板数据源.xlsx》④市场规模。
+  </div>`;
+  const defs=[['全球/出货量','seg-gship','ch-gship'],['全球/市场规模','seg-gsize','ch-gsize'],['中国/出货量','seg-cship','ch-cship'],['中国/市场规模','seg-csize','ch-csize']];
+  defs.forEach(([key,sg,ch])=>{
+    const orgs=Object.keys(S[key]||{});
+    seg(sg,orgs,k=>{
+      const s=S[key][k];
+      const pts=s.y.map((yy,i)=>({name:String(yy),value:s.v[i],f:s.f[i]}));
+      mkChart(ch,lineOption(pts,units[key],colorMap[key]));
+    });
+  });
+}
+
+// ===== 竞争格局板块 =====
+function pieOption(data, colors){
+  const axc=axisColor();
+  return {
+    color: colors,
+    tooltip:{trigger:'item', formatter:'{b}: {c} ({d}%)'},
+    legend:{bottom:0, textStyle:{color:axc,fontSize:11}, itemWidth:10, itemHeight:10},
+    series:[{
+      type:'pie', radius:['42%','68%'], center:['50%','44%'],
+      itemStyle:{borderColor:'#fff', borderWidth:2},
+      label:{show:false},
+      data: data.map(([name,val])=>({name, value:val}))
+    }]
+  };
+}
+function barHAxis(keys, vals, color){
+  const axc=axisColor(), gc=gridColor();
+  const multicolor = Array.isArray(color);
+  return {
+    grid:{left:8, right:30, top:10, bottom:4, containLabel:true},
+    tooltip:{trigger:'axis', axisPointer:{type:'shadow'}},
+    xAxis:{type:'value', axisLabel:{color:axc,fontSize:10}, splitLine:{lineStyle:{color:gc}}},
+    yAxis:{type:'category', data:keys, axisLabel:{color:axc,fontSize:10}, axisLine:{lineStyle:{color:gc}}},
+    series:[{type:'bar', data:vals, barMaxWidth:14,
+      itemStyle:{color:multicolor?(p)=>color[p.dataIndex%color.length]:color, borderRadius:[0,3,3,0]},
+      label:{show:true,position:'right',color:axc,fontSize:10}}]
+  };
+}
+function renderCompete(){
+  const C=D.compete||{};
+  const rows=C.prodrows||[];
+  const stage=C.stage_dist||{};
+  const screen=C.screen_dist||{};
+  const country=C.country_dist||{};
+  // 企业数 & 企业产品数 Top
+  const coCount={};
+  rows.forEach(r=>{ coCount[r.co]=(coCount[r.co]||0)+1; });
+  const coArr=Object.entries(coCount).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const coN=Object.keys(coCount).length;
+  const countryN=Object.keys(country).length;
+  const massN=stage['量产']||0;
+  const screenYes=screen['带屏']||0;
+  const v=document.getElementById('v-compete');
+  const acc=getComputedStyle(document.body).getPropertyValue('--acc').trim()||'#2563eb';
+  const palette=[acc, lightenColor(acc,0.25), lightenColor(acc,0.5), lightenColor(acc,0.72), lightenColor(acc,0.88)];
+  v.innerHTML=`
+  <div class="grid kpi-grid" style="margin-bottom:12px">
+    <div class="kpi"><div class="k">产品</div><div class="t">收录人形机器人产品</div><div class="v">${rows.length}款</div><div class="s">覆盖企业 ${coN} 家 · 覆盖国家/地区 ${countryN} 个</div></div>
+    <div class="kpi"><div class="k">阶段</div><div class="t">已量产产品</div><div class="v">${massN}款</div><div class="s">试点 ${stage['试点']||0} · 实验室 ${(stage['实验室']||0)+(stage['实验室（已退役）']||0)}</div></div>
+    <div class="kpi"><div class="k">屏幕</div><div class="t">带屏交互产品</div><div class="v">${screenYes}款</div><div class="s">带屏 ${screenYes} / 不带屏 ${screen['不带屏']||0} / 未知 ${screen['未知']||0}</div></div>
+    <div class="kpi"><div class="k">国别</div><div class="t">中国企业产品数</div><div class="v">${country['中国']||0}款</div><div class="s">占比 ${country['中国']&&rows.length?Math.round(country['中国']/rows.length*100):0}%（全球 ${Object.values(country).reduce((a,b)=>a+b,0)}）</div></div>
+  </div>
+  <div class="grid c2">
+    <div class="card"><h3>发展阶段分布</h3><div class="chart" id="ch-cstage"></div></div>
+    <div class="card"><h3>是否带交互屏</h3><div class="chart" id="ch-cscreen"></div></div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h3>企业国别分布（按企业数量热力填充）</h3>
+    <div class="chart" id="ch-ccountry" style="height:400px"></div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h3>各企业产品数量 Top 12</h3><div class="chart" id="ch-ccompany"></div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+      <h3 style="margin:0">产品明细（<span id="pt-count">${rows.length}</span>款）</h3>
+      <input id="pt-search" type="text" placeholder="搜索企业/型号/阶段…" style="width:260px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--btn-bg);color:var(--text);font-size:12px;outline:none">
+    </div>
+    <div style="overflow:auto">
+    <table class="ptable" id="pt-table" style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)">企业</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)">产品型号</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)">阶段</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)">发布时间</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)">售价</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)">带屏</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)">屏幕规格</th>
+      </tr></thead>
+      <tbody id="pt-tbody">
+        ${rows.map(r=>`<tr>
+          <td style="padding:7px 10px;border-bottom:1px solid var(--line)">${esc(r.co)}</td>
+          <td style="padding:7px 10px;border-bottom:1px solid var(--line);font-weight:600">${esc(r.name)}</td>
+          <td style="padding:7px 10px;border-bottom:1px solid var(--line)">${esc(r.stage)}</td>
+          <td style="padding:7px 10px;border-bottom:1px solid var(--line)">${esc(r.time||'NA')}</td>
+          <td style="padding:7px 10px;border-bottom:1px solid var(--line)">${esc(r.price||'NA')}</td>
+          <td style="padding:7px 10px;border-bottom:1px solid var(--line)">${esc(r.screen)}</td>
+          <td style="padding:7px 10px;border-bottom:1px solid var(--line);color:var(--sub);max-width:340px">${esc((r.spec||'NA').slice(0,90))}${(r.spec||'').length>90?'…':''}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    </div>
+  </div>
+  <div class="note">
+    <b>口径说明</b>：本板块统计已上市/已发布人形机器人产品（不含研究原型）；售价保留原币种（人民币/美元/欧元），未做汇率换算；缺数标 NA。<br>
+    <b>数据来源</b>：各企业官网/官方发布会，详见《人形机器人看板数据源.xlsx》②产品名单。
+  </div>`;
+  // 图表
+  mkChart('ch-cstage', pieOption(Object.entries(stage), idcPalette(Object.keys(stage).length)));
+  mkChart('ch-cscreen', pieOption(Object.entries(screen), [chartColors()[0], chartColors()[2], '#c5d0dd']));
+  mkChart('ch-ccompany', barHAxis(coArr.map(x=>x[0]).reverse(), coArr.map(x=>x[1]).reverse(), idcPalette(coArr.length)));
+  // 世界地图（异步加载 GeoJSON）
+  renderWorldMap(country, acc);
+  // 表格搜索
+  const searchEl=document.getElementById('pt-search');
+  const tbody=document.getElementById('pt-tbody');
+  const countEl=document.getElementById('pt-count');
+  if(searchEl && tbody){
+    const trs=tbody.querySelectorAll('tr');
+    searchEl.addEventListener('input', ()=>{
+      const q=searchEl.value.trim().toLowerCase();
+      let n=0;
+      trs.forEach(tr=>{
+        const txt=tr.textContent.toLowerCase();
+        const show=!q || txt.indexOf(q)>=0;
+        tr.style.display=show?'':'none';
+        if(show) n++;
+      });
+      if(countEl) countEl.textContent=n;
+    });
+  }
+}
+
+// 国家经纬度映射（用于地图散点定位）
+const COORD={
+  '中国':[104,35],'美国':[-98,39],'日本':[138,36],'韩国':[127,37],
+  '英国':[-2,54],'德国':[10,51],'法国':[2,46],'西班牙':[-4,40],
+  '意大利':[12,42],'奥地利':[14,47],'瑞士':[8,47],'荷兰':[5,52],
+  '挪威':[10,62],'加拿大':[-106,56],'以色列':[35,31],'波兰':[19,52],
+  '澳大利亚':[134,-25]
+};
+let worldMapLoaded=false;
+function renderWorldMap(countryDist, acc){
+  const axc=axisColor();
+  const el=document.getElementById('ch-ccountry');
+  if(!el) return;
+  const dark=document.body.dataset.mode==='dark';
+  // 国家名称映射（中文→GeoJSON英文）
+  const NAME_MAP={
+    '中国':'China','美国':'United States','日本':'Japan','韩国':'South Korea',
+    '英国':'United Kingdom','德国':'Germany','法国':'France','西班牙':'Spain',
+    '意大利':'Italy','奥地利':'Austria','瑞士':'Switzerland','荷兰':'Netherlands',
+    '挪威':'Norway','加拿大':'Canada','以色列':'Israel','波兰':'Poland',
+    '澳大利亚':'Australia','俄罗斯':'Russia'
+  };
+  const data=Object.entries(countryDist).map(([cn,val])=>({
+    name: NAME_MAP[cn]||cn,
+    value: val,
+    cn: cn
+  }));
+  const maxV=Math.max(...data.map(d=>d.value),1);
+  const draw=()=>{
+    const old=echarts.getInstanceByDom(el); if(old) old.dispose();
+    const c=echarts.init(el);
+    c.setOption({
+      tooltip:{
+        trigger:'item',
+        formatter:p=>{
+          if(p.seriesType==='map'){
+            const d=data.find(x=>x.name===p.name);
+            return d?`${d.cn}：${d.value} 家企业`:`${p.name}：无数据`;
+          }
+          return p.name;
+        }
+      },
+      visualMap:{
+        min:0, max:maxV,
+        left:20, bottom:20,
+        text:['多','少'],
+        inRange:{
+          color: dark?['#1a2230', acc] : ['#e8edf2', acc]
+        },
+        textStyle:{color: axc, fontSize:11}
+      },
+      series:[{
+        type:'map', map:'world',
+        roam:true, zoom:1.05, center:[30,20],
+        label:{show:false},
+        itemStyle:{
+          areaColor: dark?'#1a2230':'#e8edf2',
+          borderColor: dark?'#3a4556':'#c8d0da',
+          borderWidth:0.5
+        },
+        emphasis:{
+          itemStyle:{areaColor: dark?'#243044':'#d4dce6'},
+          label:{show:true, color:axc, fontSize:11}
+        },
+        data: data
+      },{
+        type:'scatter', coordinateSystem:'geo',
+        symbolSize:val=>Math.max(8, Math.sqrt(val[2]||0)*12),
+        itemStyle:{color:'#fff', borderColor:acc, borderWidth:2},
+        label:{
+          show:true, position:'right',
+          formatter:p=>{
+            const d=data.find(x=>x.name===p.name);
+            return d&&d.value>=1?`${d.cn} ${d.value}`:'';
+          },
+          color:axc, fontSize:11, fontWeight:600
+        },
+        data: data.map(d=>({
+          name:d.name,
+          value:[...(COORD[d.cn]||[0,0]), d.value]
+        })).filter(d=>COORD[d.name])
+      }]
+    });
+    charts.push(c);
+  };
+  if(worldMapLoaded){ draw(); return; }
+  fetch('world.json')
+    .then(r=>r.json())
+    .then(gj=>{ echarts.registerMap('world', gj); worldMapLoaded=true; draw(); })
+    .catch(()=>{
+      const ctryArr=Object.entries(countryDist).sort((a,b)=>b[1]-a[1]);
+      mkChart('ch-ccountry', barHAxis(ctryArr.map(x=>x[0]).reverse(), ctryArr.map(x=>x[1]).reverse(), acc));
+    });
+}
+
+// ===== 融资情况板块 =====
+function renderFinance(){
+  const rows=D.financing||[];
+  const v=document.getElementById('v-finance');
+  const acc=getComputedStyle(document.body).getPropertyValue('--acc').trim()||'#2563eb';
+  const axc=axisColor(), gc=gridColor();
+  // 统计
+  const yearCnt={}, roundCnt={}, unitCnt={}, coCnt={};
+  let knownAmt=0;
+  rows.forEach(r=>{
+    const y=String(r['融资时间']||'').slice(0,4)||'未披露';
+    yearCnt[y]=(yearCnt[y]||0)+1;
+    const rd=r['融资轮数']||'未披露';
+    roundCnt[rd]=(roundCnt[rd]||0)+1;
+    const u=r['金额单位']||'NA';
+    unitCnt[u]=(unitCnt[u]||0)+1;
+    const co=r['企业名称']||'未知';
+    coCnt[co]=(coCnt[co]||0)+1;
+    if(r['金额数值']!=null && r['金额数值']!=='NA' && u!=='NA') knownAmt++;
+  });
+  const coN=Object.keys(coCnt).length;
+  // 新增KPI计算
+  const stratCnt = rows.filter(r=>(r['融资轮数']||'').includes('战略')).length;
+  const ipoCos = new Set(rows.filter(r=>r['最新状态']==='上市/IPO').map(r=>r['企业名称']));
+  const activeCos = new Set(rows.filter(r=>{const t=r['融资时间']||'';return t.startsWith('2025')||t.startsWith('2026');}).map(r=>r['企业名称']));
+  const yearKeys=Object.keys(yearCnt).filter(y=>/^\d{4}$/.test(y)).sort();
+  const yearVals=yearKeys.map(y=>yearCnt[y]);
+  const topCo=Object.entries(coCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  // 轮次聚合：把相似轮次合并为早期/成长期/成熟期
+  const roundGroup={'种子/天使':['种子轮','天使轮','天使+轮','Pre-A轮','A轮','A+轮','A++轮','A轮（Series A）'],
+    'B/C轮':['B轮','B+轮','C轮','C+轮','C轮（Series C）'],
+    '战略/IPO':['战略投资','股权投资','IPO前基石投资','港股IPO','IPO后配售'],
+    '其他':[]};
+  const roundAgg={};
+  Object.entries(roundCnt).forEach(([rd,c])=>{
+    let placed=false;
+    for(const [g,list] of Object.entries(roundGroup)){
+      if(list.includes(rd)){ roundAgg[g]=(roundAgg[g]||0)+c; placed=true; break; }
+    }
+    if(!placed) roundAgg['其他']=(roundAgg['其他']||0)+c;
+  });
+  v.innerHTML=`
+  <div class="grid kpi-grid" style="margin-bottom:12px">
+    <div class="kpi"><div class="k">2026热度</div><div class="t">2026年融资事件</div><div class="v">${yearCnt['2026']||0}起</div><div class="s">覆盖企业 ${new Set(rows.filter(r=>(r['融资时间']||'').startsWith('2026')).map(r=>r['企业名称'])).size} 家</div></div>
+    <div class="kpi"><div class="k">产业协同</div><div class="t">战略投资渗透率</div><div class="v">${(stratCnt/rows.length*100).toFixed(1)}%</div><div class="s">${stratCnt} 起含战略/产业资本</div></div>
+    <div class="kpi"><div class="k">行业成熟度</div><div class="t">已上市企业</div><div class="v">${ipoCos.size}家</div><div class="s">优必选/宇树/乐聚/逐际/Agility</div></div>
+    <div class="kpi"><div class="k">赛道活跃度</div><div class="t">近12个月活跃企业</div><div class="v">${activeCos.size}家</div><div class="s">2025-2026年有融资事件</div></div>
+  </div>
+  <div class="grid c2">
+    <div class="card"><h3>融资事件按年份分布</h3><div class="chart" id="ch-fyear"></div></div>
+    <div class="card"><h3>融资轮次阶段分布</h3><div class="chart" id="ch-fround"></div></div>
+    <div class="card" style="grid-column:1/-1"><h3>融资事件最多企业 Top 10</h3><div class="chart" id="ch-fco"></div></div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+      <h3 style="margin:0">融资明细（<span id="fin-count">${rows.length}</span>起）</h3>
+      <input id="fin-search" type="text" placeholder="搜索企业/轮次/时间…" style="width:260px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--btn-bg);color:var(--text);font-size:12px;outline:none">
+    </div>
+    <div style="overflow:auto;max-height:480px">
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="position:sticky;top:0;background:var(--card)">
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)">企业</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)">最新状态</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)">融资轮次</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)">金额</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)">时间</th>
+        <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)">来源</th>
+      </tr></thead>
+      <tbody id="fin-tbody">
+        ${rows.map(r=>{
+          const amt=(r['金额数值']==null||r['金额数值']==='NA')?'NA':r['金额数值']+(r['金额单位']!=='NA'?' '+r['金额单位']:'');
+          const status=r['最新状态']||'NA';
+          const src=r['数据来源']||'';
+          const stColor = status==='上市/IPO' ? 'var(--acc)' : status==='被并购' ? 'var(--sub)' : 'var(--text)';
+          return `<tr>
+            <td style="padding:7px 10px;border-bottom:1px solid var(--line)">${esc(r['企业名称'])}</td>
+            <td style="padding:7px 10px;border-bottom:1px solid var(--line)"><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;background:var(--btn-bg);color:${stColor};border:1px solid var(--line)">${esc(status)}</span></td>
+            <td style="padding:7px 10px;border-bottom:1px solid var(--line)">${esc(r['融资轮数'])}</td>
+            <td style="padding:7px 10px;border-bottom:1px solid var(--line);font-weight:600">${esc(amt)}</td>
+            <td style="padding:7px 10px;border-bottom:1px solid var(--line)">${esc(r['融资时间']||'NA')}</td>
+            <td style="padding:7px 10px;border-bottom:1px solid var(--line)">${src?`<a href="${esc(src)}" target="_blank" style="color:var(--acc);font-size:11px">来源</a>`:'NA'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    </div>
+  </div>
+  <div class="note">
+    <b>口径说明</b>：多币种保留原币种（人民币/美元/港元/韩元/欧元/加元），未做汇率换算；缺数标NA，未补0；金额口径（约/超）保留原文。<br>
+    <b>数据来源</b>：水滴信用/港交所/上市公司公告等，详见《人形机器人看板数据源.xlsx》③融资情况。
+  </div>`;
+  // 图表
+  mkChart('ch-fyear', {
+    grid:{left:8,right:16,top:20,bottom:4,containLabel:true},
+    tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+    xAxis:{type:'category',data:yearKeys,axisLabel:{color:axc,fontSize:10,rotate:30}},
+    yAxis:{type:'value',axisLabel:{color:axc,fontSize:10},splitLine:{lineStyle:{color:gc}}},
+    series:[{type:'bar',data:yearVals,barMaxWidth:24,
+      itemStyle:{color:p=>chartColors()[p.dataIndex%chartColors().length],borderRadius:[3,3,0,0]},
+      label:{show:true,position:'top',color:axc,fontSize:10}}]
+  });
+  mkChart('ch-fround', pieOption(Object.entries(roundAgg), idcPalette(Object.keys(roundAgg).length)));
+  mkChart('ch-fco', barHAxis(topCo.map(x=>x[0]).reverse(), topCo.map(x=>x[1]).reverse(), idcPalette(topCo.length)));
+  // 搜索
+  const searchEl=document.getElementById('fin-search');
+  const tbody=document.getElementById('fin-tbody');
+  const countEl=document.getElementById('fin-count');
+  if(searchEl && tbody){
+    const trs=tbody.querySelectorAll('tr');
+    searchEl.addEventListener('input', ()=>{
+      const q=searchEl.value.trim().toLowerCase();
+      let n=0;
+      trs.forEach(tr=>{
+        const txt=tr.textContent.toLowerCase();
+        const show=!q || txt.indexOf(q)>=0;
+        tr.style.display=show?'':'none';
+        if(show) n++;
+      });
+      if(countEl) countEl.textContent=n;
+    });
+  }
+}
+
+function renderNews(){
+  if(!D) return;
+  const items=[];
+  // 市场规模
+  (D.market||[]).forEach(r=>{
+    if(r['来源链接']) items.push({
+      co: r['报告机构']||'NA',
+      section: 'market', sectionLabel: '市场规模',
+      date: r['机构发布时间']||'NA',
+      content: `${r['指标类型']}：${r['数值']}${r['量纲']}（${r['范围']}，${r['数据所属年份']}${r['预测标记']?'预测':''}）`,
+      url: r['来源链接']
+    });
+  });
+  // 产品/竞争格局
+  (D.products||[]).forEach(r=>{
+    if(r['数据来源']) items.push({
+      co: r['企业名称']||'NA',
+      section: 'compete', sectionLabel: '竞争格局',
+      date: r['发布时间']||'NA',
+      content: `产品：${r['产品名称']}（${r['阶段']}${r['是否带屏']?'，带屏':''}）`,
+      url: r['数据来源']
+    });
+  });
+  // 融资
+  (D.financing||[]).forEach(r=>{
+    if(r['数据来源']) items.push({
+      co: r['企业名称']||'NA',
+      section: 'finance', sectionLabel: '融资情况',
+      date: r['融资时间']||'NA',
+      content: `${r['融资轮数']}：${r['金额数值']&&r['金额数值']!=='NA'?r['金额数值']+(r['金额单位']||''):'金额未披露'}`,
+      url: r['数据来源']
+    });
+  });
+  // 渲染
+  const tbody=document.getElementById('news-tbody');
+  if(!tbody) return;
+  tbody.innerHTML = items.map((it,i)=>{
+    const tagColor = it.section==='market' ? 'var(--acc)' : it.section==='compete' ? '#7a5fbf' : '#b07b2e';
+    return `<tr data-section="${it.section}" style="border-bottom:1px solid var(--line)">
+      <td style="padding:8px 12px">${esc(it.co)}</td>
+      <td style="padding:8px 12px"><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;background:var(--acc-bg);color:${tagColor}">${it.sectionLabel}</span></td>
+      <td style="padding:8px 12px;color:var(--sub)">${esc(it.date)}</td>
+      <td style="padding:8px 12px;color:var(--sub)">${esc(it.content)}</td>
+      <td style="padding:8px 12px">${it.url?`<a href="${esc(it.url)}" target="_blank" style="color:var(--acc);font-size:11px">来源</a>`:'NA'}</td>
+    </tr>`;
+  }).join('');
+  // 搜索
+  const searchEl=document.getElementById('news-search');
+  const trs=tbody.querySelectorAll('tr');
+  if(searchEl){
+    searchEl.addEventListener('input', ()=>{
+      const q=searchEl.value.trim().toLowerCase();
+      trs.forEach(tr=>{ tr.style.display=(!q || tr.textContent.toLowerCase().indexOf(q)>=0)?'':'none'; });
+    });
+  }
+  // 筛选
+  const tabs=document.querySelectorAll('#news-tabs .tab');
+  tabs.forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      tabs.forEach(t=>{t.classList.remove('on');t.style.background='var(--card)';t.style.color='var(--sub)';});
+      tab.classList.add('on');tab.style.background='var(--acc)';tab.style.color='#fff';
+      const f=tab.dataset.filter;
+      trs.forEach(tr=>{
+        tr.style.display = (f==='all' || tr.dataset.section===f) ? '' : 'none';
+      });
+    });
+  });
+}
+
+function loadData(){
+  return fetch('dashboard.json', {cache:'no-store'})
+    .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(d=>{ D=d; renderMarket(); renderCompete(); renderFinance(); renderNews(); })
+    .catch(err=>{
+      document.getElementById('v-market').innerHTML =
+        '<div class="card" style="padding:40px 20px;text-align:center">'+
+        '<h3 style="justify-content:center;font-size:15px">数据加载失败</h3>'+
+        '<p style="color:var(--sub);margin-top:8px;font-size:13px">无法读取 dashboard.json（'+esc(err.message)+'）。</p>'+
+        '<p style="color:var(--sub);margin-top:4px;font-size:12px">请将该目录部署到 GitHub Pages 后访问（浏览器 file:// 模式禁止 fetch 本地 JSON）。</p>'+
+        '</div>';
+    });
+}
+loadData();
+</script>
+</body>
+</html>
